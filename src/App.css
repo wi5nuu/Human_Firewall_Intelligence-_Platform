@@ -1,0 +1,239 @@
+/* ============================================
+   HUMAN FIREWALL INTELLIGENCE PLATFORM
+   App-specific Styles
+   ============================================ */
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom focus styles */
+*:focus-visible {
+  outline: 2px solid hsl(187 94% 43%);
+  outline-offset: 2px;
+}
+
+/* Progress bar styling */
+[data-slot="progress-indicator"] {
+  background: linear-gradient(90deg, hsl(187 94% 43%), hsl(187 80% 50%)) !important;
+}
+
+/* Tab styling */
+[data-state="active"] {
+  position: relative;
+}
+
+/* Card hover effects */
+.glass-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 0 30px hsl(187 94% 43% / 0.1);
+}
+
+/* Button ripple effect */
+.btn-cyber {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cyber::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-cyber:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Simulator specific styles */
+.email-simulator {
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+.whatsapp-simulator {
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+.instagram-simulator {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Message bubble animations */
+@keyframes message-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.message-bubble {
+  animation: message-pop 0.3s ease-out forwards;
+}
+
+/* Typing indicator dots */
+.typing-dot {
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0ms; }
+.typing-dot:nth-child(2) { animation-delay: 150ms; }
+.typing-dot:nth-child(3) { animation-delay: 300ms; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Score animation */
+@keyframes score-count {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.score-animate {
+  animation: score-count 0.5s ease-out forwards;
+}
+
+/* Radar chart glow */
+.radar-chart-glow {
+  filter: drop-shadow(0 0 10px hsl(187 94% 43% / 0.3));
+}
+
+/* Dashboard stat card hover */
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px hsl(187 94% 43% / 0.15);
+}
+
+/* Leaderboard rank styling */
+.rank-1 {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.rank-2 {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.05));
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.rank-3 {
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.2), rgba(180, 83, 9, 0.05));
+  border-color: rgba(180, 83, 9, 0.3);
+}
+
+/* Loading skeleton animation */
+.skeleton-pulse {
+  animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Toast notification styling */
+[data-sonner-toast] {
+  background: hsl(220, 18%, 6%) !important;
+  border: 1px solid hsl(220, 15%, 20%) !important;
+  color: white !important;
+}
+
+/* Scrollbar styling for simulators */
+.simulator-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.simulator-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.simulator-scroll::-webkit-scrollbar-thumb {
+  background: hsl(220, 15%, 25%);
+  border-radius: 2px;
+}
+
+.simulator-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(220, 15%, 35%);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .glass-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  
+  .cyber-glow {
+    box-shadow: none;
+  }
+}
+
+/* Print styles for PDF generation */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .glass-card {
+    border-width: 2px;
+  }
+  
+  .btn-cyber {
+    border: 2px solid currentColor;
+  }
+}

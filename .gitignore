@@ -1,0 +1,80 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Build Output
+# =========================
+dist/
+build/
+out/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Coverage
+# =========================
+coverage/
+
+# =========================
+# Cache
+# =========================
+.cache/
+.nyc_output/
+
+# =========================
+# IDEs and Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Optional: PM2
+# =========================
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Optional: Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Optional: Misc
+# =========================
+*.tgz
+*.bak
+*.tmp
