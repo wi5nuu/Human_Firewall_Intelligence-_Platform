@@ -151,8 +151,8 @@ export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab
-                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                    : 'text-slate-400 hover:text-slate-300'
+                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                : 'text-slate-400 hover:text-slate-300'
                                 }`}
                         >
                             {tab === 'login' ? 'Login' : 'Daftar'}
@@ -174,12 +174,12 @@ export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
                         >
                             <div className="space-y-2">
                                 <Label htmlFor="login-email" className="text-slate-300 flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-cyan-400" /> Email Student
+                                    <Mail className="w-4 h-4 text-cyan-400" /> Email
                                 </Label>
                                 <Input
                                     id="login-email"
                                     type="email"
-                                    placeholder="name@student.president.ac.id"
+                                    placeholder="you@example.com"
                                     value={loginEmail}
                                     onChange={e => setLoginEmail(e.target.value)}
                                     className="bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500"
@@ -289,19 +289,19 @@ export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="reg-email" className="text-slate-300 flex items-center gap-2">
-                                            <Mail className="w-4 h-4 text-cyan-400" /> Email Student *
+                                            <Mail className="w-4 h-4 text-cyan-400" /> Email
                                         </Label>
                                         <Input
                                             id="reg-email"
                                             type="email"
-                                            placeholder="name@student.president.ac.id"
+                                            placeholder="you@example.com"
                                             value={regEmail}
                                             onChange={e => setRegEmail(e.target.value)}
                                             className="bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500"
                                             required
                                             autoComplete="email"
                                         />
-                                        <p className="text-xs text-slate-500">Hanya email @student.president.ac.id</p>
+                                        <p className="text-xs text-slate-500">Gunakan email aktif untuk verifikasi akun</p>
                                     </div>
 
                                     <div className="space-y-1">

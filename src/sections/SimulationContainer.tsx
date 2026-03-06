@@ -17,6 +17,7 @@ import { WhatsAppSimulator } from './simulators/WhatsAppSimulator';
 import { InstagramSimulator } from './simulators/InstagramSimulator';
 import { useSimulationStore } from '@/store';
 import { getMixedScenarios } from '@/lib/scenariosDatabase';
+import { updateParticipantScore } from '@/lib/supabase';
 import type { Scenario, UserAction } from '@/types';
 
 interface SimulationContainerProps {
@@ -47,9 +48,9 @@ export function SimulationContainer({ onComplete }: SimulationContainerProps) {
 
   const {
     currentParticipant,
+    difficulty,
     currentScenario,
     currentScenarioIndex,
-    // simulationPhase and lastDecision available for future UI enhancements
     startSimulation,
     nextScenario,
     submitDecision,
@@ -60,7 +61,8 @@ export function SimulationContainer({ onComplete }: SimulationContainerProps) {
   useEffect(() => {
     const loadScenarios = async () => {
       setIsLoading(true);
-      const loadedScenarios = getMixedScenarios(5);
+      const scenarioCount = difficulty === 'Enterprise' ? 10 : difficulty === 'Medium' ? 7 : 5;
+      const loadedScenarios = getMixedScenarios(scenarioCount, difficulty);
       setScenarios(loadedScenarios);
 
       if (currentParticipant) {
@@ -88,12 +90,22 @@ export function SimulationContainer({ onComplete }: SimulationContainerProps) {
   };
 
   // Handle next after feedback
-  const handleNext = () => {
+  const handleNext = async () => {
     setShowFeedback(false);
     setFeedbackData(null);
 
     if (currentScenarioIndex >= scenarios.length - 1) {
       completeSimulation();
+      // Persist final score to Supabase in real-time
+      const result = useSimulationStore.getState().scoreResult;
+      if (currentParticipant && result) {
+        await updateParticipantScore(
+          currentParticipant.id,
+          result.total_score,
+          result.category,
+          result.metrics.total_time
+        );
+      }
       onComplete();
     } else {
       nextScenario();
@@ -170,10 +182,10 @@ export function SimulationContainer({ onComplete }: SimulationContainerProps) {
                 <div key={s.id} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isCompleted
-                        ? 'bg-green-500/20 text-green-400'
-                        : isCurrent
-                          ? 'bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-400'
-                          : 'bg-slate-800 text-slate-500'
+                      ? 'bg-green-500/20 text-green-400'
+                      : isCurrent
+                        ? 'bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-400'
+                        : 'bg-slate-800 text-slate-500'
                       }`}
                   >
                     {isCompleted ? (

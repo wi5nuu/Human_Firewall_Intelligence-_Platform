@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Radar, 
-  RadarChart, 
-  PolarGrid, 
-  PolarAngleAxis, 
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
   PolarRadiusAxis,
   ResponsiveContainer,
   BarChart,
@@ -14,13 +14,13 @@ import {
   Tooltip,
   Cell
 } from 'recharts';
-import { 
-  Trophy, 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Download, 
-  RefreshCw, 
+import {
+  Trophy,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  RefreshCw,
   Share2,
   Clock,
   Target,
@@ -36,13 +36,14 @@ import type { ScoreResult, RiskCategory } from '@/types';
 interface ScoreDisplayProps {
   result: ScoreResult;
   onGeneratePDF?: () => void;
+  onGenerateCertificate?: () => void;
   onRetry?: () => void;
   onShare?: () => void;
 }
 
-const categoryConfig: Record<RiskCategory, { 
-  color: string; 
-  bgColor: string; 
+const categoryConfig: Record<RiskCategory, {
+  color: string;
+  bgColor: string;
   icon: typeof Shield;
   description: string;
 }> = {
@@ -72,11 +73,11 @@ const categoryConfig: Record<RiskCategory, {
   },
 };
 
-export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreDisplayProps) {
+export function ScoreDisplay({ result, onGeneratePDF, onGenerateCertificate, onRetry, onShare }: ScoreDisplayProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const circleRef = useRef<SVGCircleElement>(null);
-  
+
   const { total_score, category, metrics, recommendations } = result;
   const config = categoryConfig[category];
   const CategoryIcon = config.icon;
@@ -87,7 +88,7 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
     const steps = 60;
     const increment = total_score / steps;
     let current = 0;
-    
+
     const timer = setInterval(() => {
       current += increment;
       if (current >= total_score) {
@@ -127,7 +128,7 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
     <section className="relative min-h-screen py-12">
       {/* Background */}
       <div className="absolute inset-0 cyber-gradient" />
-      
+
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -187,7 +188,7 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
                     }}
                   />
                 </svg>
-                
+
                 {/* Center Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-5xl font-bold text-white">{animatedScore}%</span>
@@ -228,13 +229,13 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                     <PolarGrid stroke="hsl(220, 15%, 20%)" />
-                    <PolarAngleAxis 
-                      dataKey="subject" 
+                    <PolarAngleAxis
+                      dataKey="subject"
                       tick={{ fill: '#94a3b8', fontSize: 12 }}
                     />
-                    <PolarRadiusAxis 
-                      angle={90} 
-                      domain={[0, 100]} 
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 100]}
                       tick={false}
                       axisLine={false}
                     />
@@ -317,12 +318,12 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={timeData}>
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     tick={{ fill: '#94a3b8', fontSize: 12 }}
                     axisLine={{ stroke: 'hsl(220, 15%, 20%)' }}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fill: '#94a3b8', fontSize: 12 }}
                     axisLine={{ stroke: 'hsl(220, 15%, 20%)' }}
                   />
@@ -336,8 +337,8 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
                   />
                   <Bar dataKey="time" radius={[4, 4, 0, 0]}>
                     {timeData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={entry.correct ? '#22c55e' : '#ef4444'}
                       />
                     ))}
@@ -400,6 +401,16 @@ export function ScoreDisplay({ result, onGeneratePDF, onRetry, onShare }: ScoreD
               <Download className="w-5 h-5 mr-2" />
               Download Report
             </Button>
+            {onGenerateCertificate && (result.category === 'Human Firewall' || result.category === 'Low Risk') && (
+              <Button
+                variant="outline"
+                onClick={onGenerateCertificate}
+                className="btn-cyber px-8 py-6 text-base rounded-xl border-cyan-500/30 text-cyan-100 bg-cyan-900/50 hover:bg-cyan-500/30"
+              >
+                <Trophy className="w-5 h-5 mr-2 text-yellow-400" />
+                Get Certificate
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={onShare}

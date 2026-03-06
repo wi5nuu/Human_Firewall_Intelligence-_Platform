@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getTopParticipants } from '@/lib/supabase';
+import { getTopParticipants, getTopBySpeed, getTopByAccuracy, getTodayTopParticipants } from '@/lib/supabase';
 import type { Participant } from '@/types';
 
 interface LeaderboardCategory {
@@ -49,29 +49,6 @@ const categories: LeaderboardCategory[] = [
   },
 ];
 
-// Generate mock data for different categories
-const generateMockData = (category: string): Participant[] => {
-  const names = [
-    'Alex Chen', 'Sarah Johnson', 'Michael Park', 'Emma Wilson',
-    'David Kim', 'Lisa Anderson', 'James Brown', 'Maria Garcia',
-    'Robert Lee', 'Jennifer Martinez', 'William Taylor', 'Amanda White',
-    'Christopher Davis', 'Jessica Thompson', 'Daniel Moore'
-  ];
-
-  return names.map((name, i) => ({
-    id: `mock_${category}_${i}`,
-    name,
-    final_score: category === 'speed'
-      ? Math.floor(Math.random() * 30) + 20
-      : Math.floor(Math.random() * 30) + 70,
-    category: ['Human Firewall', 'Low Risk', 'Moderate Risk'][Math.floor(Math.random() * 3)] as any,
-    total_time: category === 'speed'
-      ? (i + 1) * 15000
-      : Math.floor(Math.random() * 300000),
-    created_at: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-  }));
-};
-
 interface LeaderboardProps {
   onStartChallenge?: () => void;
 }
@@ -87,16 +64,18 @@ export function Leaderboard({ onStartChallenge }: LeaderboardProps) {
 
   const loadLeaderboardData = async () => {
     setIsLoading(true);
-
-    // Load overall scores from Supabase
-    const overallData = await getTopParticipants(15);
-
-    // Generate mock data for other categories
+    // Load all categories from real Supabase data
+    const [overallData, speedData, accuracyData, todayData] = await Promise.all([
+      getTopParticipants(15),
+      getTopBySpeed(15),
+      getTopByAccuracy(15),
+      getTodayTopParticipants(15),
+    ]);
     const data: Record<string, Participant[]> = {
       overall: overallData,
-      speed: generateMockData('speed').sort((a, b) => a.total_time - b.total_time),
-      accuracy: generateMockData('accuracy').filter(p => p.final_score >= 90),
-      streak: generateMockData('streak').slice(0, 5),
+      speed: speedData,
+      accuracy: accuracyData,
+      streak: todayData,
     };
 
     setParticipants(data);
@@ -148,15 +127,15 @@ export function Leaderboard({ onStartChallenge }: LeaderboardProps) {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="overall" className="w-full" onValueChange={setActiveCategory}>
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-800/50 p-2 rounded-2xl mb-8">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-800/50 p-2 rounded-2xl mb-8 h-auto">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat.id}
                   value={cat.id}
-                  className="data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-900 rounded-xl py-3 text-slate-400 hover:text-white transition-all"
+                  className="data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-900 rounded-xl py-2 md:py-3 px-2 md:px-4 text-slate-400 hover:text-white transition-all flex flex-col md:flex-row items-center justify-center text-xs md:text-sm h-full min-h-[60px] md:min-h-0 text-center"
                 >
-                  <cat.icon className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">{cat.name}</span>
+                  <cat.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="inline">{cat.name}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

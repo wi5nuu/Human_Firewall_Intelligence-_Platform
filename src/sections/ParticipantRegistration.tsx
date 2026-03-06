@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useSimulationStore } from '@/store';
 import { createParticipant } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useExhibitionMode } from './ExhibitionMode';
 
 interface ParticipantRegistrationProps {
   onComplete: () => void;
@@ -18,19 +19,29 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'Easy' | 'Medium' | 'Enterprise'>('Easy');
 
   const setCurrentParticipant = useSimulationStore((state) => state.setCurrentParticipant);
+  const setDifficulty = useSimulationStore((state) => state.setDifficulty);
+
+  const { isExhibitionMode } = useExhibitionMode();
 
   useEffect(() => {
     if (profile?.name) setName(profile.name);
     if (user?.email) setEmail(user.email);
-  }, [profile, user]);
+
+    // Auto-fill for exhibition mode if empty
+    if (isExhibitionMode && !user) {
+      setName('Exhibition Judge');
+      setEmail('judge@exhibition.local');
+    }
+  }, [profile, user, isExhibitionMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !email.trim()) {
-      setError('Data diri tidak lengkap');
+      setError('Please complete all fields');
       return;
     }
 
@@ -41,23 +52,24 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
       const participant = await createParticipant(name.trim(), email.trim(), user?.id);
 
       if (participant) {
+        setDifficulty(selectedDifficulty);
         setCurrentParticipant(participant);
         onComplete();
       } else {
-        setError('Gagal memulai. Silakan coba lagi.');
+        setError('Failed to start. Please try again.');
       }
     } catch (err) {
-      setError('Terjadi kesalahan. Silakan coba lagi.');
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const features = [
-    '3 Simulasi Realistis (Email, WhatsApp, Instagram)',
-    'Analisis Perilaku berbasis AI',
-    'Laporan Kerentanan Personal',
-    'Data Terenkripsi & Terlindungi',
+    '3 Realistic Scenarios (Email, WhatsApp, Instagram)',
+    'AI-Powered Behavioral Analytics',
+    'Personal Vulnerability Report',
+    'Encrypted & Protected Data',
   ];
 
   return (
@@ -75,16 +87,16 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span className="text-sm text-cyan-300">Siap Dimulai</span>
+                <span className="text-sm text-cyan-300">Ready to Begin</span>
               </div>
 
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Mulai
-                <span className="heading-gradient block">Assessment Keamanan</span>
+                Start
+                <span className="heading-gradient block">Security Assessment</span>
               </h2>
 
               <p className="text-slate-400 mb-8">
-                Uji kemampuan Anda mengidentifikasi serangan social engineering nyata di lingkungan kampus.
+                Test your ability to identify real-world social engineering attacks in a campus environment.
               </p>
 
               <div className="space-y-3">
@@ -113,34 +125,56 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
             >
               <div className="glass-card rounded-2xl p-6 md:p-8">
                 <h3 className="text-xl font-semibold text-white mb-6">
-                  Profil Peserta
+                  Participant Profile
                 </h3>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-slate-300 flex items-center gap-2">
-                      <User className="w-4 h-4 text-cyan-400" /> Nama Lengkap
+                      <User className="w-4 h-4 text-cyan-400" /> Full Name
                     </Label>
                     <Input
                       id="name"
                       type="text"
                       value={name}
-                      readOnly
-                      className="bg-slate-900/80 border-slate-700 text-slate-400 cursor-not-allowed"
+                      onChange={(e) => setName(e.target.value)}
+                      readOnly={!!profile?.name}
+                      className={`bg-slate-900/80 border-slate-700 text-slate-400 ${!!profile?.name ? 'cursor-not-allowed' : ''}`}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-slate-300 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-cyan-400" /> Email Student
+                      <Mail className="w-4 h-4 text-cyan-400" /> Email
                     </Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
-                      readOnly
-                      className="bg-slate-900/80 border-slate-700 text-slate-400 cursor-not-allowed"
+                      onChange={(e) => setEmail(e.target.value)}
+                      readOnly={!!user?.email}
+                      className={`bg-slate-900/80 border-slate-700 text-slate-400 ${!!user?.email ? 'cursor-not-allowed' : ''}`}
                     />
+                  </div>
+
+                  {/* Difficulty Selection */}
+                  <div className="space-y-3 pt-2">
+                    <Label className="text-slate-300">Select Difficulty Level</Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(['Easy', 'Medium', 'Enterprise'] as const).map((diff) => (
+                        <button
+                          key={diff}
+                          type="button"
+                          onClick={() => setSelectedDifficulty(diff)}
+                          className={`py-2 px-3 rounded-lg text-sm transition-all border ${selectedDifficulty === diff
+                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 font-medium'
+                            : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'
+                            }`}
+                        >
+                          {diff}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {error && (
@@ -161,11 +195,11 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
                     {isLoading ? (
                       <>
                         <div className="w-5 h-5 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin mr-2" />
-                        Memulai...
+                        Starting...
                       </>
                     ) : (
                       <>
-                        Mulai Assessment
+                        Start Assessment
                         <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
@@ -173,7 +207,7 @@ export function ParticipantRegistration({ onComplete }: ParticipantRegistrationP
                 </form>
 
                 <p className="text-center text-xs text-slate-500 mt-4">
-                  Assessment membutuhkan waktu 5-7 menit
+                  Assessment takes 5-7 minutes
                 </p>
               </div>
             </motion.div>

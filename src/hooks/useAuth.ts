@@ -73,12 +73,12 @@ function validatePassword(password: string): string | null {
     return null;
 }
 
-function validateStudentEmail(email: string): string | null {
+function validateEmail(email: string): string | null {
     const clean = email.trim().toLowerCase();
     if (!clean) return 'Email wajib diisi';
-    if (!clean.includes('@')) return 'Format email tidak valid';
-    if (!clean.endsWith('@student.president.ac.id')) {
-        return 'Hanya email @student.president.ac.id yang diperbolehkan';
+    // Standard RFC-compliant email format check
+    if (!/^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/.test(clean)) {
+        return 'Format email tidak valid';
     }
     return null;
 }
@@ -116,8 +116,16 @@ export function useAuth() {
             return;
         }
 
-        // Get initial session
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        // Timeout fallback string to detect hanging promises
+        const timeoutPromise = new Promise<{ data: { session: Session | null } }>((_, reject) => {
+            setTimeout(() => reject(new Error('Supabase getSession timeout')), 5000);
+        });
+
+        // Get initial session with timeout
+        Promise.race([
+            supabase.auth.getSession(),
+            timeoutPromise
+        ]).then(async ({ data: { session } }) => {
             let profile: UserProfile | null = null;
             if (session?.user) {
                 profile = await fetchProfile(session.user.id);
@@ -130,6 +138,9 @@ export function useAuth() {
                 isAdmin: profile?.role === 'admin',
                 isAuthenticated: !!session?.user,
             });
+        }).catch(err => {
+            console.warn('Authentication check failed or timed out:', err.message);
+            setState(prev => ({ ...prev, isLoading: false }));
         });
 
         // Listen for auth changes
@@ -194,7 +205,7 @@ export function useAuth() {
 
         // Validate
         if (!name || name.length < 2) return 'Nama harus minimal 2 karakter';
-        const emailErr = validateStudentEmail(email);
+        const emailErr = validateEmail(email);
         if (emailErr) return emailErr;
         const passErr = validatePassword(password);
         if (passErr) return passErr;
@@ -234,7 +245,7 @@ export function useAuth() {
         signIn,
         signUp,
         signOut,
-        validateStudentEmail,
+        validateEmail,
         validatePassword,
     };
 }

@@ -1,19 +1,16 @@
-// ============================================
-// MEMBER DASHBOARD — Score History
-// Human Firewall Intelligence Platform
-// ============================================
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Shield, Trophy, Clock, Target, TrendingUp,
-    RefreshCw, LogOut, Award, ChevronRight, Loader2,
-    AlertTriangle, CheckCircle, Star
+    RefreshCw, LogOut, ChevronRight, Loader2,
+    AlertTriangle, CheckCircle, Sparkles, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useDeviceType } from '@/hooks/useDeviceType';
 import { supabase } from '@/lib/supabase';
-import type { RiskCategory } from '@/types';
+import { generateCertificate, generateVerificationCode } from '@/lib/pdfGenerator';
+import type { RiskCategory, Participant, ScoreResult } from '@/types';
 
 interface ParticipantHistory {
     id: string;
@@ -52,6 +49,7 @@ export function MemberDashboard({ onPlayAgain, onNavigate }: MemberDashboardProp
     const { user, profile, signOut } = useAuth();
     const [history, setHistory] = useState<ParticipantHistory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { isDesktop, isMobile } = useDeviceType();
 
     useEffect(() => {
         if (!user || !supabase) { setIsLoading(false); return; }
@@ -79,100 +77,132 @@ export function MemberDashboard({ onPlayAgain, onNavigate }: MemberDashboardProp
         onNavigate('home');
     };
 
-    return (
-        <section className="relative min-h-screen overflow-hidden">
-            <div className="absolute inset-0 cyber-gradient cyber-grid-bg" />
+    const handleDownloadCertificate = async (item: ParticipantHistory) => {
+        if (!profile) return;
+        const participant: Participant = {
+            id: item.id,
+            name: profile.name,
+            final_score: item.final_score,
+            category: item.category,
+            total_time: item.total_time_ms,
+            created_at: item.created_at
+        };
+        const scoreResult: ScoreResult = {
+            total_score: item.final_score,
+            category: item.category,
+            metrics: {
+                decision_accuracy: item.final_score,
+                avg_response_time: item.total_time_ms / 10,
+                hesitation_patterns: 0,
+                difficulty_multiplier: 1,
+                total_time: item.total_time_ms,
+                vulnerability_breakdown: { urgency_manipulation: 0, authority_bias: 0, reward_bait: 0, emotional_trigger: 0, curiosity_trap: 0 }
+            },
+            attempts: [],
+            recommendations: ["Keep maintaining your cybersecurity awareness!"]
+        };
+        await generateCertificate({
+            participant, scoreResult, generated_at: new Date().toISOString(), verification_code: generateVerificationCode()
+        });
+    };
 
-            <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
+    return (
+        <section className={`relative min-h-screen overflow-hidden ${isDesktop ? 'py-20' : 'pt-28 pb-32 px-4'}`}>
+            <div className={`absolute inset-0 ${isDesktop ? 'cyber-gradient cyber-grid-bg' : 'bg-slate-950'}`} />
+
+            <div className="relative z-10 container mx-auto max-w-6xl">
+                {/* Adaptive Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between mb-8 flex-wrap gap-4"
+                    className={`flex items-center justify-between mb-10 flex-wrap gap-6 ${isMobile ? 'flex-col items-start' : ''}`}
                 >
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                    <div className="flex items-center gap-5">
+                        <div className={`rounded-${isDesktop ? '2xl' : 'full'} bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black shadow-xl shadow-indigo-600/20 ${isDesktop ? 'w-16 h-16 text-2xl' : 'w-14 h-14 text-xl'}`}>
                             {profile?.name?.[0]?.toUpperCase() ?? '?'}
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-white">{profile?.name ?? 'Member'}</h1>
-                            <p className="text-sm text-slate-400">{user?.email}</p>
+                            <h1 className={`${isDesktop ? 'text-4xl' : 'text-3xl'} font-black text-white tracking-tight`}>{profile?.name || 'Pilot'}</h1>
+                            <p className="text-slate-500 font-mono text-sm tracking-tighter">Human Firewall Intelligence Unit</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Button onClick={onPlayAgain} className="btn-cyber px-6 py-2 rounded-xl flex items-center gap-2 text-sm">
-                            <RefreshCw className="w-4 h-4" /> Mulai Challenge
+
+                    <div className={`flex items-center gap-4 ${isMobile ? 'w-full' : ''}`}>
+                        <Button onClick={onPlayAgain} className={`${isDesktop ? 'rounded-2xl px-8 flex-1' : 'rounded-full px-6 flex-1'} bg-cyan-500 hover:bg-cyan-400 text-black font-black h-12 flex items-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-95 transition-all`}>
+                            <RefreshCw className="w-4 h-4" /> RETAKE SIMULATION
                         </Button>
                         <Button
                             variant="outline"
                             onClick={handleSignOut}
-                            className="border-slate-700 text-slate-400 hover:bg-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 text-sm"
+                            className={`${isDesktop ? 'rounded-2xl' : 'rounded-full'} border-white/10 text-slate-400 hover:bg-white/5 h-12 px-6 flex items-center gap-2 transition-all`}
                         >
-                            <LogOut className="w-4 h-4" /> Keluar
+                            <LogOut className="w-4 h-4" />
                         </Button>
                     </div>
                 </motion.div>
 
-                {/* Stats Overview */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-                >
+                {/* Stats Grid */}
+                <div className={`grid ${isDesktop ? 'grid-cols-4 gap-6' : 'grid-cols-2 gap-4'} mb-10`}>
                     {[
-                        { label: 'Total Main', value: totalPlays, icon: Target, suffix: 'x' },
-                        { label: 'Skor Terbaik', value: bestScore, icon: Trophy, suffix: '/100' },
-                        { label: 'Rata-rata', value: avgScore, icon: TrendingUp, suffix: '/100' },
-                        { label: 'Level', value: bestScore >= 91 ? 'Pro' : bestScore >= 71 ? 'Aman' : bestScore >= 41 ? 'Waspada' : 'Risiko', icon: Star, suffix: '' },
+                        { label: 'SIMULATIONS', value: totalPlays, icon: Target, suffix: '', color: 'text-cyan-400' },
+                        { label: 'BEST SCORE', value: bestScore, icon: Trophy, suffix: '', color: 'text-yellow-400' },
+                        { label: 'AVG SCORE', value: avgScore, icon: TrendingUp, suffix: '', color: 'text-emerald-400' },
+                        { label: 'PROFICIENCY', value: bestScore >= 91 ? 'PRO' : bestScore >= 71 ? 'SECURE' : 'WEAK', icon: Sparkles, suffix: '', color: 'text-indigo-400' },
                     ].map((stat, i) => {
                         const Icon = stat.icon;
                         return (
                             <motion.div
                                 key={stat.label}
-                                initial={{ opacity: 0, scale: 0.9 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.1 + i * 0.05 }}
-                                className="glass-card rounded-xl p-4 text-center"
+                                className={`glass-card p-6 border-white/5 bg-white/[0.02] flex flex-col items-center text-center transition-all hover:bg-white/[0.05] ${isDesktop ? 'rounded-[2.5rem]' : 'rounded-[2rem]'}`}
                             >
-                                <Icon className="w-5 h-5 text-cyan-400 mx-auto mb-2" />
-                                <div className="text-2xl font-bold text-white">
-                                    {stat.value}{stat.suffix}
-                                </div>
-                                <div className="text-xs text-slate-400">{stat.label}</div>
+                                <Icon className={`w-6 h-6 ${stat.color} mb-3`} />
+                                <div className="text-3xl font-black text-white">{stat.value}{stat.suffix}</div>
+                                <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">{stat.label}</div>
                             </motion.div>
                         );
                     })}
-                </motion.div>
+                </div>
 
-                {/* History */}
+                {/* Performance History */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-card rounded-2xl p-6"
+                    transition={{ delay: 0.3 }}
+                    className={`glass-card p-8 bg-white/[0.01] border-white/5 shadow-2xl relative overflow-hidden ${isDesktop ? 'rounded-[3rem]' : 'rounded-[2.5rem]'}`}
                 >
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-cyan-400" /> Riwayat Challenge
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[80px] pointer-events-none" />
+
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-black text-white flex items-center gap-3">
+                            <Clock className="w-6 h-6 text-cyan-400" /> TIMELINE HISTORY
                         </h2>
-                        <span className="text-xs text-slate-500">{totalPlays} sesi</span>
+                        <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                            {totalPlays} SESSIONS
+                        </div>
                     </div>
 
                     {isLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                        <div className="flex flex-col items-center justify-center py-24 gap-4">
+                            <Loader2 className="w-10 h-10 text-cyan-500 animate-spin" />
+                            <p className="text-slate-500 font-mono text-xs tracking-tighter">Synchronizing Intelligence Data...</p>
                         </div>
                     ) : history.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Shield className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                            <p className="text-slate-400">Kamu belum pernah ikut challenge.</p>
-                            <Button onClick={onPlayAgain} className="btn-cyber mt-4 px-6 py-2 rounded-xl">
-                                Mulai Sekarang <ChevronRight className="w-4 h-4 ml-1" />
+                        <div className="text-center py-20 flex flex-col items-center">
+                            <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center mb-6">
+                                <Shield className="w-10 h-10 text-slate-700" />
+                            </div>
+                            <h3 className="text-white font-bold text-lg mb-2">No Intelligence Logs Found</h3>
+                            <p className="text-slate-500 max-w-xs mb-8">Participate in your first simulation challenge to begin building your human firewall history.</p>
+                            <Button onClick={onPlayAgain} className="btn-cyber px-8 h-14 rounded-full font-black text-sm">
+                                START CHALLENGE <ChevronRight className="w-4 h-4 ml-2" />
                             </Button>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {history.map((item, i) => {
                                 const cfg = categoryConfig[item.category] ?? categoryConfig['High Risk'];
                                 const Icon = cfg.icon;
@@ -182,26 +212,34 @@ export function MemberDashboard({ onPlayAgain, onNavigate }: MemberDashboardProp
                                         key={item.id}
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.04 }}
-                                        className={`flex items-center gap-4 p-4 rounded-xl border ${cfg.color} ${isTop ? 'ring-1 ring-cyan-500/40' : ''
-                                            }`}
+                                        transition={{ delay: i * 0.05 }}
+                                        className={`group relative flex items-center gap-6 p-6 transition-all border ${isDesktop ? 'rounded-[2.5rem]' : 'rounded-[2rem]'} ${isTop ? 'bg-cyan-500/5 border-cyan-500/20' : 'bg-white/[0.02] border-white/5 hover:bg-white/5'}`}
                                     >
-                                        {isTop && (
-                                            <Trophy className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-                                        )}
-                                        <Icon className={`w-5 h-5 flex-shrink-0 ${!isTop ? '' : 'hidden'}`} />
+                                        <div className={`w-14 h-14 rounded-3xl flex items-center justify-center ${isTop ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 text-slate-500'}`}>
+                                            {isTop ? <Trophy className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+                                        </div>
+
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-white text-lg">{Math.round(item.final_score)}/100</span>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full border ${cfg.color}`}>{item.category}</span>
-                                                {isTop && <span className="text-xs text-yellow-400">Best!</span>}
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <span className="font-black text-2xl text-white">{Math.round(item.final_score)}%</span>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${cfg.color}`}>{item.category}</span>
+                                                {isTop && <span className="text-[10px] font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-md">NEW BEST!</span>}
                                             </div>
-                                            <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
-                                                <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(item.total_time_ms)}</span>
-                                                <span>{formatDate(item.created_at)}</span>
+                                            <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                                                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {formatTime(item.total_time_ms)}</span>
+                                                <span className="flex items-center gap-1.5 uppercase font-mono tracking-tighter opacity-60">{formatDate(item.created_at)}</span>
                                             </div>
                                         </div>
-                                        <Award className="w-6 h-6 text-slate-600" />
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => handleDownloadCertificate(item)}
+                                                className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isTop ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                                            >
+                                                <Download className="w-5 h-5" />
+                                            </Button>
+                                        </div>
                                     </motion.div>
                                 );
                             })}

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Menu, X, BarChart3, Trophy, User, LogOut, Settings } from 'lucide-react';
+import { Shield, BarChart3, Trophy, User, LogOut, Settings, BookOpen, Search, Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useDeviceType } from '@/hooks/useDeviceType';
 
 export interface NavigationProps {
   currentView: string;
@@ -15,20 +16,21 @@ export interface NavigationProps {
 
 const navItems = [
   { id: 'home', label: 'Home', icon: Shield },
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { id: 'learning', label: 'Explore', icon: BookOpen },
+  { id: 'dashboard', label: 'Stats', icon: BarChart3 },
   { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
 ];
 
 export function Navigation({
-  currentView, onNavigate, isAuthenticated, isAdmin, onAuthClick, onProfileClick
+  currentView, onNavigate, isAuthenticated, isAdmin, onAuthClick
 }: NavigationProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { profile, signOut } = useAuth();
+  const { isDesktop } = useDeviceType();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -47,198 +49,258 @@ export function Navigation({
     setShowUserMenu(false);
   };
 
-  return (
-    <>
+  // ============================================
+  // DESKTOP UI (Premium Web)
+  // ============================================
+  if (isDesktop) {
+    return (
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-            ? 'bg-slate-900/95 backdrop-blur-lg border-b border-slate-800 shadow-lg'
-            : 'bg-transparent'
+          ? 'bg-slate-900/90 backdrop-blur-xl border-b border-white/5 shadow-2xl py-2'
+          : 'bg-transparent py-4'
           }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <motion.button
-              onClick={() => onNavigate('home')}
-              className="flex items-center gap-3 group"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-cyan-500/30 transition-shadow">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <div className="text-white font-bold text-sm leading-tight">Human Firewall</div>
-                <div className="text-cyan-400 text-xs">Intelligence Platform</div>
-              </div>
-            </motion.button>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentView === item.id;
-                return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    onClick={() => onNavigate(item.id)}
-                    className={`relative px-4 py-2 rounded-lg transition-all ${isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                      }`}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {item.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="navIndicator"
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyan-400"
-                      />
-                    )}
-                  </Button>
-                );
-              })}
+        <div className="container mx-auto px-6 lg:px-12 flex items-center justify-between">
+          {/* Logo */}
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-3 group">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+              <Shield className="w-6 h-6 text-white" />
             </div>
+            <div className="text-left">
+              <div className="text-white font-black text-lg leading-none tracking-tight">HUMAN FIREWALL</div>
+              <div className="text-cyan-400 text-[10px] font-mono uppercase tracking-[0.2em] mt-1">Intelligence Platform</div>
+            </div>
+          </button>
 
-            {/* Right Side: Auth/User */}
-            <div className="hidden md:flex items-center gap-3">
-              {isAuthenticated ? (
-                <div className="relative" onClick={e => e.stopPropagation()}>
-                  <motion.button
-                    onClick={() => setShowUserMenu(v => !v)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700 hover:border-cyan-500/50 transition-all"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                      {profile?.name?.[0]?.toUpperCase() ?? '?'}
-                    </div>
-                    <span className="text-white text-sm font-medium max-w-24 truncate">{profile?.name ?? 'Member'}</span>
-                    {isAdmin && (
-                      <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md border border-yellow-500/30">Admin</span>
-                    )}
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {showUserMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        className="absolute right-0 top-12 w-48 glass-card rounded-xl border border-slate-700 shadow-xl overflow-hidden"
-                      >
-                        <div className="p-3 border-b border-slate-700">
-                          <p className="text-white text-sm font-medium truncate">{profile?.name}</p>
-                          <p className="text-slate-400 text-xs truncate">{profile?.role}</p>
-                        </div>
-                        <div className="p-1">
-                          <button
-                            onClick={() => { onProfileClick(); setShowUserMenu(false); }}
-                            className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 text-sm flex items-center gap-2 transition-colors"
-                          >
-                            <Settings className="w-4 h-4" />
-                            {isAdmin ? 'Admin Dashboard' : 'Profil & Riwayat'}
-                          </button>
-                          <button
-                            onClick={handleSignOut}
-                            className="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 text-sm flex items-center gap-2 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" /> Keluar
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <Button onClick={onAuthClick} className="btn-cyber px-5 py-2 rounded-lg text-sm flex items-center gap-2">
-                  <User className="w-4 h-4" /> Login / Daftar
-                </Button>
-              )}
-
-              {/* Take Challenge CTA (only when not in challenge already) */}
-              {!['simulation', 'results', 'member', 'admin', 'auth'].includes(currentView) && (
-                <Button
-                  onClick={() => onNavigate('challenge')}
-                  variant="outline"
-                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 px-4 py-2 rounded-lg text-sm"
+          {/* Desktop Links */}
+          <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md rounded-2xl p-1 border border-white/5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  className={`relative px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${isActive ? 'text-white bg-white/10 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
                 >
-                  Take Challenge
-                </Button>
-              )}
-            </div>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
+                  {item.label}
+                  {isActive && (
+                    <motion.div layoutId="desktopNav" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden text-white"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </Button>
+          {/* User Controls */}
+          <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}
+                  className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs">
+                    {profile?.name?.[0]?.toUpperCase()}
+                  </div>
+                  <span className="text-sm font-bold text-white">{profile?.name}</span>
+                </button>
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 mt-3 w-56 rounded-2xl bg-slate-900/95 backdrop-blur-2xl border border-white/10 p-2 shadow-2xl z-[60]"
+                    >
+                      <button onClick={() => onNavigate('member')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-300 transition-colors">
+                        <User className="w-4 h-4" /> Member Area
+                      </button>
+                      {isAdmin && (
+                        <button onClick={() => onNavigate('admin')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-300 transition-colors">
+                          <Settings className="w-4 h-4" /> Admin Console
+                        </button>
+                      )}
+                      <div className="h-px bg-white/5 my-1" />
+                      <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-red-400 transition-colors">
+                        <LogOut className="w-4 h-4" /> Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Button onClick={onAuthClick} className="bg-cyan-500 hover:bg-cyan-400 text-black font-black px-8 py-6 rounded-2xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95">
+                PORTAL LOGIN
+              </Button>
+            )}
           </div>
         </div>
       </motion.nav>
+    );
+  }
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-0 top-16 z-40 md:hidden"
+  // ============================================
+  // ANDROID UI (Extreme Mobile M3)
+  // ============================================
+  return (
+    <>
+      {/* 1. M3 Top App Bar */}
+      <motion.header
+        initial={{ y: -50 }}
+        animate={{ y: 0 }}
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 pt-safe px-4 py-3 flex items-center justify-between ${isScrolled ? 'bg-slate-900/95 backdrop-blur-2xl border-b border-white/5 shadow-lg' : 'bg-transparent'
+          }`}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onNavigate('member')}
+            className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black text-sm border-2 border-white/10 active:scale-90 transition-transform"
           >
-            <div className="bg-slate-900/98 backdrop-blur-lg border-b border-slate-800 p-4">
-              <div className="space-y-2">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentView === item.id;
-                  return (
-                    <Button
-                      key={item.id}
-                      variant="ghost"
-                      onClick={() => { onNavigate(item.id); setIsMobileMenuOpen(false); }}
-                      className={`w-full justify-start px-4 py-3 rounded-lg ${isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                        }`}
-                    >
-                      <Icon className="w-5 h-5 mr-3" /> {item.label}
-                    </Button>
-                  );
-                })}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  {isAuthenticated ? (
-                    <>
-                      <Button
-                        onClick={() => { onProfileClick(); setIsMobileMenuOpen(false); }}
-                        variant="ghost"
-                        className="w-full justify-start text-slate-300 hover:bg-slate-800 py-3"
-                      >
-                        <User className="w-5 h-5 mr-3" />
-                        {isAdmin ? 'Admin Panel' : `Halo, ${profile?.name ?? 'Member'}`}
-                      </Button>
-                      <Button
-                        onClick={async () => { await signOut(); onNavigate('home'); setIsMobileMenuOpen(false); }}
-                        variant="ghost"
-                        className="w-full justify-start text-red-400 hover:bg-red-500/10 py-3"
-                      >
-                        <LogOut className="w-5 h-5 mr-3" /> Keluar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={() => { onAuthClick(); setIsMobileMenuOpen(false); }}
-                      className="w-full btn-cyber py-3 rounded-lg"
-                    >
-                      <User className="w-5 h-5 mr-2" /> Login / Daftar
-                    </Button>
-                  )}
+            {profile?.name?.[0]?.toUpperCase() || <Shield className="w-5 h-5" />}
+          </button>
+          {!isScrolled && (
+            <div className="text-left scale-90 origin-left">
+              <div className="text-white font-black text-xs leading-none">HUMAN FIREWALL</div>
+              <div className="text-cyan-400 text-[8px] font-mono uppercase tracking-widest mt-0.5">INTEL PLATFORM</div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button className="p-2.5 rounded-full text-slate-400 active:bg-white/10 active:text-white transition-colors">
+            <Search className="w-5 h-5" />
+          </button>
+          <button className="p-2.5 rounded-full text-slate-400 active:bg-white/10 active:text-white transition-colors relative">
+            <Bell className="w-5 h-5" />
+            <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-cyan-500 border border-slate-900" />
+          </button>
+          <button onClick={() => setShowUserMenu(!showUserMenu)} className="p-2.5 rounded-full text-slate-400 active:bg-white/10 active:text-white transition-colors">
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      </motion.header>
+
+      {/* 2. M3 Bottom Pill Nav */}
+      <motion.div
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        className="fixed bottom-0 left-0 right-0 z-[100] pb-safe"
+      >
+        <div className="bg-slate-900/95 backdrop-blur-3xl border-t border-white/5 px-2 pb-2">
+          <div className="flex items-center justify-around h-16 max-w-md mx-auto">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  className="relative flex flex-col items-center justify-center w-full group py-1"
+                >
+                  <div className={`relative px-5 py-1 rounded-full transition-all duration-300 overflow-hidden ${isActive ? 'bg-cyan-500/20 shadow-[inset_0_0_12px_rgba(34,211,238,0.1)]' : 'hover:bg-white/5'
+                    }`}>
+                    {/* The Active Pill Indicator */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activePill"
+                        className="absolute inset-x-0 inset-y-0.5 bg-cyan-500/30 rounded-full z-0"
+                        transition={{ type: 'spring', bounce: 0.3, duration: 0.6 }}
+                      />
+                    )}
+                    <Icon className={`w-6 h-6 relative z-10 transition-colors duration-300 ${isActive ? 'text-cyan-400 scale-110' : 'text-slate-500'}`} />
+                  </div>
+                  <span className={`text-[10px] mt-1 font-bold tracking-tight transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* Auth/Profile for Android */}
+            <button
+              onClick={() => onNavigate(isAuthenticated ? 'member' : 'auth')}
+              className="relative flex flex-col items-center justify-center w-full group py-1"
+            >
+              <div className={`relative px-5 py-1 rounded-full transition-all duration-300 ${currentView === 'member' || currentView === 'auth' ? 'bg-indigo-500/20' : 'hover:bg-white/5'}`}>
+                {(currentView === 'member' || currentView === 'auth') && (
+                  <motion.div layoutId="activePill" className="absolute inset-x-0 inset-y-0.5 bg-indigo-500/30 rounded-full z-0" />
+                )}
+                <User className={`w-6 h-6 relative z-10 ${currentView === 'member' || currentView === 'auth' ? 'text-indigo-400' : 'text-slate-500'}`} />
+              </div>
+              <span className={`text-[10px] mt-1 font-bold tracking-tight ${currentView === 'member' || currentView === 'auth' ? 'text-white' : 'text-slate-500'}`}>
+                {isAuthenticated ? 'Profile' : 'Sign In'}
+              </span>
+            </button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Mobile Drawer (Android Style Content) */}
+      <AnimatePresence>
+        {showUserMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowUserMenu(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-slate-900 z-[120] p-6 shadow-2xl flex flex-col"
+            >
+              <div className="flex items-center gap-4 mb-10 pt-4">
+                <div className="w-16 h-16 rounded-[2rem] bg-indigo-600 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-indigo-600/20">
+                  {profile?.name?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">{profile?.name || 'Guest User'}</h3>
+                  <p className="text-sm text-slate-500 font-mono tracking-tighter">Human Firewall Pilot</p>
                 </div>
               </div>
-            </div>
-          </motion.div>
+
+              <div className="space-y-2 flex-1">
+                <Button variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl hover:bg-white/5 text-lg font-bold" onClick={() => { onNavigate('member'); setShowUserMenu(false); }}>
+                  <User className="w-5 h-5 text-cyan-400" /> My Profile
+                </Button>
+                {isAdmin && (
+                  <Button variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl hover:bg-white/5 text-lg font-bold" onClick={() => { onNavigate('admin'); setShowUserMenu(false); }}>
+                    <Settings className="w-5 h-5 text-indigo-400" /> Admin Panel
+                  </Button>
+                )}
+                <Button variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl hover:bg-white/5 text-lg font-bold" onClick={() => { onNavigate('learning'); setShowUserMenu(false); }}>
+                  <BookOpen className="w-5 h-5 text-emerald-400" /> Learning Path
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-4 h-14 rounded-full border-white/5 hover:bg-red-500/10 text-red-500 font-black mb-safe"
+                onClick={handleSignOut}
+              >
+                <LogOut className="w-5 h-5" /> SIGN OUT
+              </Button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
+
+      <style>{`
+        @keyframes badgePulse {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); }
+          50% { transform: scale(1.1); box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.2); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+        }
+      `}</style>
     </>
   );
 }

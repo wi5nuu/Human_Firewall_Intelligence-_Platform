@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { 
-  Participant, 
-  Scenario, 
-  ScenarioAttempt, 
-  ScoreResult, 
+import type {
+  Participant,
+  Scenario,
+  ScenarioAttempt,
+  ScoreResult,
   UserAction,
   RiskCategory,
   BehavioralMetrics,
@@ -16,26 +16,29 @@ import type {
 // ============================================
 
 interface SimulationState {
-  // Participant
   currentParticipant: Participant | null;
   setCurrentParticipant: (participant: Participant | null) => void;
-  
+
+  // Difficulty
+  difficulty: 'Easy' | 'Medium' | 'Enterprise';
+  setDifficulty: (difficulty: 'Easy' | 'Medium' | 'Enterprise') => void;
+
   // Simulation Flow
   currentScenarioIndex: number;
   scenarioQueue: Scenario[];
   attempts: ScenarioAttempt[];
   simulationStartTime: number;
   scenarioStartTime: number;
-  
+
   // Current State
   currentScenario: Scenario | null;
   simulationPhase: 'intro' | 'scenario' | 'decision' | 'feedback' | 'completed';
   lastDecision: UserAction | null;
   lastDecisionTime: number;
-  
+
   // Results
   scoreResult: ScoreResult | null;
-  
+
   // Actions
   startSimulation: (participant: Participant, scenarios: Scenario[]) => void;
   nextScenario: () => void;
@@ -50,6 +53,7 @@ export const useSimulationStore = create<SimulationState>()(
     (set, get) => ({
       // Initial State
       currentParticipant: null,
+      difficulty: 'Easy',
       currentScenarioIndex: 0,
       scenarioQueue: [],
       attempts: [],
@@ -60,12 +64,17 @@ export const useSimulationStore = create<SimulationState>()(
       lastDecision: null,
       lastDecisionTime: 0,
       scoreResult: null,
-      
+
       // Set Participant
       setCurrentParticipant: (participant) => {
         set({ currentParticipant: participant });
       },
-      
+
+      // Set Difficulty
+      setDifficulty: (difficulty) => {
+        set({ difficulty });
+      },
+
       // Start Simulation
       startSimulation: (participant, scenarios) => {
         const now = Date.now();
@@ -82,12 +91,12 @@ export const useSimulationStore = create<SimulationState>()(
           scoreResult: null,
         });
       },
-      
+
       // Next Scenario
       nextScenario: () => {
         const { currentScenarioIndex, scenarioQueue } = get();
         const nextIndex = currentScenarioIndex + 1;
-        
+
         if (nextIndex >= scenarioQueue.length) {
           // Complete simulation
           get().completeSimulation();
@@ -101,21 +110,21 @@ export const useSimulationStore = create<SimulationState>()(
           });
         }
       },
-      
+
       // Submit Decision
       submitDecision: (action) => {
-        const { 
-          currentScenario, 
-          currentParticipant, 
-          attempts, 
-          scenarioStartTime 
+        const {
+          currentScenario,
+          currentParticipant,
+          attempts,
+          scenarioStartTime
         } = get();
-        
+
         if (!currentScenario || !currentParticipant) return;
-        
+
         const responseTime = Date.now() - scenarioStartTime;
         const isCorrect = action === currentScenario.correct_action;
-        
+
         const attempt: ScenarioAttempt = {
           id: `attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           participant_id: currentParticipant.id,
@@ -127,7 +136,7 @@ export const useSimulationStore = create<SimulationState>()(
           response_time: responseTime,
           created_at: new Date().toISOString(),
         };
-        
+
         set({
           attempts: [...attempts, attempt],
           lastDecision: action,
@@ -135,31 +144,31 @@ export const useSimulationStore = create<SimulationState>()(
           simulationPhase: 'feedback',
         });
       },
-      
+
       // Complete Simulation & Calculate Score
       completeSimulation: () => {
         const { attempts, scenarioQueue, simulationStartTime } = get();
-        
+
         if (attempts.length === 0) return;
-        
+
         const totalTime = Date.now() - simulationStartTime;
-        
+
         // Calculate metrics
         const correctAttempts = attempts.filter(a => a.correct);
         const decisionAccuracy = (correctAttempts.length / attempts.length) * 100;
-        
+
         const avgResponseTime = attempts.reduce((sum, a) => sum + a.response_time, 0) / attempts.length;
-        
+
         // Calculate hesitation patterns (responses > 10 seconds)
         const hesitationPatterns = attempts.filter(a => a.response_time > 10000).length;
-        
+
         // Difficulty multiplier based on scenario difficulties
         const difficultyPoints = scenarioQueue.reduce((sum, s) => {
-          const multiplier = s.difficulty === 'Advanced' ? 1.5 : 
-                            s.difficulty === 'Medium' ? 1.25 : 1;
+          const multiplier = s.difficulty === 'Advanced' ? 1.5 :
+            s.difficulty === 'Medium' ? 1.25 : 1;
           return sum + multiplier;
         }, 0);
-        
+
         // Vulnerability breakdown by manipulation type
         const manipulationTypes: Record<string, number[]> = {};
         attempts.forEach(attempt => {
@@ -167,7 +176,7 @@ export const useSimulationStore = create<SimulationState>()(
           if (!manipulationTypes[type]) manipulationTypes[type] = [];
           manipulationTypes[type].push(attempt.correct ? 1 : 0);
         });
-        
+
         const vulnerabilityBreakdown: VulnerabilityBreakdown = {
           urgency_manipulation: calculateVulnerabilityScore(manipulationTypes['urgency'] || []),
           authority_bias: calculateVulnerabilityScore(manipulationTypes['authority'] || []),
@@ -175,33 +184,33 @@ export const useSimulationStore = create<SimulationState>()(
           emotional_trigger: calculateVulnerabilityScore(manipulationTypes['fear'] || []),
           curiosity_trap: calculateVulnerabilityScore(manipulationTypes['curiosity'] || []),
         };
-        
+
         // Calculate total score (0-100)
         const accuracyWeight = 0.6;
         const speedWeight = 0.2;
         const difficultyWeight = 0.2;
-        
+
         const speedScore = Math.max(0, 100 - (avgResponseTime / 100));
         const difficultyScore = Math.min(100, (difficultyPoints / attempts.length) * 50);
-        
+
         const totalScore = Math.round(
           (decisionAccuracy * accuracyWeight) +
           (speedScore * speedWeight) +
           (difficultyScore * difficultyWeight)
         );
-        
+
         // Determine category
-        const category: RiskCategory = 
+        const category: RiskCategory =
           totalScore >= 91 ? 'Human Firewall' :
-          totalScore >= 71 ? 'Low Risk' :
-          totalScore >= 41 ? 'Moderate Risk' : 'High Risk';
-        
+            totalScore >= 71 ? 'Low Risk' :
+              totalScore >= 41 ? 'Moderate Risk' : 'High Risk';
+
         // Generate recommendations
         const recommendations = generateRecommendations(
           vulnerabilityBreakdown,
           category
         );
-        
+
         const metrics: BehavioralMetrics = {
           decision_accuracy: Math.round(decisionAccuracy),
           avg_response_time: Math.round(avgResponseTime),
@@ -210,7 +219,7 @@ export const useSimulationStore = create<SimulationState>()(
           vulnerability_breakdown: vulnerabilityBreakdown,
           total_time: totalTime,
         };
-        
+
         const scoreResult: ScoreResult = {
           total_score: totalScore,
           category,
@@ -218,17 +227,18 @@ export const useSimulationStore = create<SimulationState>()(
           attempts,
           recommendations,
         };
-        
+
         set({
           scoreResult,
           simulationPhase: 'completed',
         });
       },
-      
+
       // Reset Simulation
       resetSimulation: () => {
         set({
           currentParticipant: null,
+          difficulty: 'Easy',
           currentScenarioIndex: 0,
           scenarioQueue: [],
           attempts: [],
@@ -240,7 +250,7 @@ export const useSimulationStore = create<SimulationState>()(
           scoreResult: null,
         });
       },
-      
+
       // Skip to Results (for demo purposes)
       skipToResults: (result) => {
         set({
@@ -272,7 +282,7 @@ function generateRecommendations(
   category: RiskCategory
 ): string[] {
   const recommendations: string[] = [];
-  
+
   // Find weakest areas
   const vulnerabilities = [
     { name: 'urgency_manipulation', score: breakdown.urgency_manipulation, label: 'Urgency Manipulation' },
@@ -281,10 +291,10 @@ function generateRecommendations(
     { name: 'emotional_trigger', score: breakdown.emotional_trigger, label: 'Emotional Triggers' },
     { name: 'curiosity_trap', score: breakdown.curiosity_trap, label: 'Curiosity Traps' },
   ];
-  
+
   const sortedVulnerabilities = vulnerabilities.sort((a, b) => a.score - b.score);
   const weakest = sortedVulnerabilities[0];
-  
+
   if (category === 'High Risk') {
     recommendations.push(
       'Prioritize cybersecurity awareness training immediately',
@@ -314,14 +324,14 @@ function generateRecommendations(
       'Your behavior sets a strong example for others'
     );
   }
-  
+
   // Add specific recommendation for weakest area
   if (weakest && weakest.score < 60) {
     recommendations.push(
       `Focus on improving recognition of ${weakest.label} techniques`
     );
   }
-  
+
   return recommendations.slice(0, 5);
 }
 
@@ -346,13 +356,13 @@ export const useDashboardStore = create<DashboardState>()((set) => ({
     topTrigger: 'urgency',
   },
   recentParticipants: [],
-  
+
   updateLiveStats: (stats) => {
     set((state) => ({
       liveStats: { ...state.liveStats, ...stats },
     }));
   },
-  
+
   addParticipant: (participant) => {
     set((state) => ({
       recentParticipants: [participant, ...state.recentParticipants].slice(0, 10),
@@ -372,13 +382,13 @@ interface UIState {
 export const useUIStore = create<UIState>()((set) => ({
   isLoading: false,
   toast: null,
-  
+
   setLoading: (loading) => set({ isLoading: loading }),
-  
+
   showToast: (message, type) => {
     set({ toast: { message, type } });
     setTimeout(() => set({ toast: null }), 3000);
   },
-  
+
   clearToast: () => set({ toast: null }),
 }));

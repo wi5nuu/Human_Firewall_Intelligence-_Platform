@@ -26,26 +26,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/store';
-import { getTopParticipants, getDailyAnalytics } from '@/lib/supabase';
+import { getTopParticipants, computeRealAnalytics, getLast7DaysTrends, getVulnerabilityAnalysis, getRecentAssessments } from '@/lib/supabase';
 import type { Participant, DailyAnalytics } from '@/types';
 
-// Mock trend data
-const trendData = [
-  { date: 'Mon', score: 62, participants: 45 },
-  { date: 'Tue', score: 65, participants: 52 },
-  { date: 'Wed', score: 63, participants: 48 },
-  { date: 'Thu', score: 68, participants: 61 },
-  { date: 'Fri', score: 70, participants: 58 },
-  { date: 'Sat', score: 67, participants: 42 },
-  { date: 'Sun', score: 72, participants: 38 },
-];
-
-// Heatmap data
-const heatmapData = [
-  { type: 'Email', urgency: 35, authority: 45, reward: 60, fear: 40, curiosity: 55 },
-  { type: 'WhatsApp', urgency: 50, authority: 30, reward: 70, fear: 55, curiosity: 45 },
-  { type: 'Instagram', urgency: 40, authority: 25, reward: 80, fear: 35, curiosity: 65 },
-];
+// Heatmap and Trend data now fetched from Supabase via setTrendData and setHeatmapData
 
 const COLORS = {
   high: '#ef4444',
@@ -60,6 +44,9 @@ export function LiveDashboard() {
   const [, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const { liveStats, updateLiveStats } = useDashboardStore();
 
   useEffect(() => {
@@ -78,13 +65,19 @@ export function LiveDashboard() {
 
   const loadData = async () => {
     setIsLoading(true);
-    const [topParticipants, dailyAnalytics] = await Promise.all([
+    const [topParticipants, dailyAnalytics, sevenDayTrends, vulnAnalysis, recent] = await Promise.all([
       getTopParticipants(10),
-      getDailyAnalytics(),
+      computeRealAnalytics(),
+      getLast7DaysTrends(),
+      getVulnerabilityAnalysis(),
+      getRecentAssessments(6)
     ]);
 
     setParticipants(topParticipants);
     setAnalytics(dailyAnalytics);
+    setTrendData(sevenDayTrends);
+    setHeatmapData(vulnAnalysis);
+    setRecentActivity(recent);
 
     if (dailyAnalytics) {
       updateLiveStats({
@@ -165,7 +158,7 @@ export function LiveDashboard() {
             },
             {
               icon: Target,
-              value: liveStats.topTrigger,
+              value: liveStats.topTrigger.charAt(0).toUpperCase() + liveStats.topTrigger.slice(1),
               label: 'Top Exploit',
               color: 'amber'
             },
@@ -367,7 +360,7 @@ export function LiveDashboard() {
             </div>
           </motion.div>
 
-          {/* Top Performers */}
+          {/* Recent Activity Feed */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -375,8 +368,56 @@ export function LiveDashboard() {
             className="glass-card rounded-2xl p-6"
           >
             <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-cyan-400" />
+              Live Activity Feed
+            </h3>
+            <div className="space-y-4">
+              {recentActivity.length === 0 ? (
+                <div className="text-slate-500 text-sm italic py-4 text-center">Waiting for new activity...</div>
+              ) : recentActivity.map((act, index) => (
+                <motion.div
+                  key={act.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  className="flex items-start gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30"
+                >
+                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 \${
+                    act.final_score >= 90 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]' :
+                    act.final_score >= 70 ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-white truncate">{act.name}</span>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">
+                        {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Scored <span className="text-cyan-400 font-bold">{act.final_score}%</span> ({act.category})
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-800/50">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">Security Pulse</span>
+                <span className="text-cyan-500 font-mono animate-pulse">● ACTIVE</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Top Performers (previously occupied this column) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="glass-card rounded-2xl p-6"
+          >
+            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
               <Brain className="w-5 h-5 text-cyan-400" />
-              Top Human Firewalls
+              Global Hall of Fame
             </h3>
             <div className="space-y-3">
               {participants.slice(0, 5).map((participant, index) => (
@@ -384,14 +425,14 @@ export function LiveDashboard() {
                   key={participant.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
+                  transition={{ delay: 0.7 + index * 0.1 }}
                   className="flex items-center gap-4 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition-colors"
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                      index === 1 ? 'bg-slate-400/20 text-slate-300' :
-                        index === 2 ? 'bg-amber-600/20 text-amber-500' :
-                          'bg-slate-700 text-slate-400'
-                    }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm \${index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                    index === 1 ? 'bg-slate-400/20 text-slate-300' :
+                    index === 2 ? 'bg-amber-600/20 text-amber-500' :
+                    'bg-slate-700 text-slate-400'
+                  }`}>
                     {index + 1}
                   </div>
                   <div className="flex-1">

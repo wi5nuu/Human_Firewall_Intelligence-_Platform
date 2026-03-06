@@ -1,73 +1,81 @@
-# React + TypeScript + Vite
+# 🛡️ Human Firewall Intelligence Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cutting-edge, enterprise-grade Cybersecurity Awareness and Phishing Simulation Platform designed to empower employees and organizations against social engineering threats.
 
-Currently, two official plugins are available:
+Built with a focus on high-fidelity user experience, real-time analytics, and adaptive learning paths.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **🎯 Advanced Phishing Simulators**: Interactive, scenario-based simulations that mimic real-world threats.
+- **📚 Interactive Learning Hub**: A comprehensive repository of modules covering social engineering, data privacy, and digital hygiene.
+- **📊 Real-time Dashboards**: Analytics for both admins and members to track progress, scores, and risk levels.
+- **🏆 Hall of Fame & Leaderboards**: Gamified performance tracking to encourage healthy competition and engagement.
+- **🛠️ Simulation Builder**: Dynamic container for running and monitoring various cybersecurity simulations.
+- **📄 Automated Reporting**: On-the-fly PDF certificate and report generation for compliance and achievement.
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+This platform leverages modern, industry-standard technologies to ensure scalability, security, and performance:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Frontend**: ⚛️ **React 19** (Ultra-modern, high-performance UI)
+- **Language**: 📘 **TypeScript** (Type-safe codebase for reliability)
+- **Styling**: 🎨 **Tailwind CSS** + **Radix UI** (Premium, accessible components)
+- **Animations**: ✨ **Framer Motion** (Fluid micro-interactions and transitions)
+- **Backend/DB**: ⚡ **Supabase** (Real-time database, authentication, and storage)
+- **State management**: 🐻 **Zustand** (Lightweight, robust global state)
+- **Forms**: 📝 **React Hook Form** + **Zod** (Schema-driven form validation)
+- **Visuals**: 📈 **Recharts** (Interactive data visualization)
+- **Build Tool**: ⚡ **Vite** (Next-gen frontend tooling)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🏗️ Architecture Highlights
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Adaptive UI**: Distinct optimized interfaces for Desktop (Web) and Mobile (Android-style Material 3).
+- **Extensible Scenarios**: Modular design allows for easy addition of new phishing templates and learning modules.
+- **Real-time Synchronization**: Powered by Supabase for instant dashboard updates and participant tracking.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📥 Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
+- Node.js (v18 or later)
+- npm or pnpm
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-repo/Human_Firewall_Intellegence_Platform.git
+   ```
+
+2. Install dependencies:
+   ```bash
+   cd app
+   npm install
+   ```
+
+3. Set up environment variables:
+   Create a `.env` file in the `app` directory with your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 👨‍💻 Developer Profile
+
+*Created with passion to solve real-world cybersecurity challenges.*
+
+- **Portfolio**: [Your Portfolio Link Here]
+- **LinkedIn**: [Your LinkedIn Profile Here]
+- **Contact**: [Your Email Here]
+
+---
+
+*This project was developed as a comprehensive demonstration of full-stack engineering, security domain expertise, and premium UI/UX design.*

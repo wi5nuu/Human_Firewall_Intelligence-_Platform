@@ -1239,6 +1239,89 @@ const whatsappScenarios: Scenario[] = [
 ];
 
 // ============================================
+// ENTERPRISE EMAIL SCENARIOS (3 Total)
+// ============================================
+emailScenarios.push(
+  {
+    id: 'email_a009',
+    type: 'email',
+    difficulty: 'Advanced',
+    manipulation_tags: ['authority', 'fear', 'urgency'],
+    content: {
+      sender: { name: 'CISO / Security Operations', email: 'sec-ops@company-global-it.com' },
+      subject: '[CRITICAL] Zero-Day Vulnerability Patch Required - Action Immediate',
+      body: `All IT & Engineering Staff,
+
+A critical zero-day vulnerability (CVE-2025-0145) affecting our core VPN infrastructure has been actively exploited in the wild.
+
+Pursuant to the emergency directive from the CISO, all employees with VPN access must deploy the mandatory security patch within the next 4 hours. Failure to comply will result in automatic network isolation to prevent lateral movement.
+
+[Download & Install Patch v4.2.1]
+
+If you encounter issues during installation, please open a P1 ticket in Jira.
+
+Corporate IT Security`,
+    },
+    is_scam: true,
+    correct_action: 'report',
+    explanation: 'Highly sophisticated enterprise phishing. The domain "company-global-it.com" is generic and likely fake. Real critical patches are typically deployed via MDM or automated patching systems, not via a direct email download link which likely serves malware.',
+    points: 20,
+  },
+  {
+    id: 'email_a010',
+    type: 'email',
+    difficulty: 'Advanced',
+    manipulation_tags: ['authority', 'fear'],
+    content: {
+      sender: { name: 'Legal Department - Global', email: 'compliance@international-privacy-board.org' },
+      subject: 'NOTICE OF GDPR DATA BREACH INVESTIGATION - INTERVIEW REQUIRED',
+      body: `Dear Employee,
+
+You have been identified as a key person of interest in the ongoing investigation regarding the recent Customer Data Exfiltration Incident affecting 2.4 million records.
+
+Under the GDPR compliance framework, you are required to attend a mandatory compliance review interview with external counsel tomorrow at 10:00 AM EST. 
+
+Please review the attached preliminary findings document securely in the portal before the meeting:
+[Access Confidential Briefing]
+
+Do not discuss this matter with other colleagues as it is subject to an active internal audit.
+
+Regards,
+Data Privacy & Compliance Office`,
+    },
+    is_scam: true,
+    correct_action: 'report',
+    explanation: 'Enterprise legal/breach scare tactic. Uses fake authority (International Privacy Board) and demands secrecy to isolate the victim. The link goes to a credential harvesting page masquerading as a secure portal.',
+    points: 20,
+  },
+  {
+    id: 'email_a011',
+    type: 'email',
+    difficulty: 'Advanced',
+    manipulation_tags: ['urgency', 'authority'],
+    content: {
+      sender: { name: 'Cloud Provider Infrastructure', email: 'alert@aws-infrastructure-monitor.com' },
+      subject: 'CRITICAL: S3 Bucket Data Exposure Warning - ID: 88472',
+      body: `DevOps & Engineering Team,
+
+Our automated monitoring has detected that the production S3 bucket "prod-customer-data-backup-01" has been inadvertently configured to "Public Read" access, exposing potentially sensitive user data.
+
+To prevent an enterprise data breach scenario, you must immediately re-configure the bucket permissions.
+
+[Review Bucket Access Policies]
+
+This incident has been logged. Action must be verified within 30 minutes to comply with corporate security SLA.
+
+Automated Infrastructure Monitor`,
+    },
+    is_scam: true,
+    correct_action: 'report',
+    explanation: 'Targeted attack against IT professionals. The domain "aws-infrastructure-monitor.com" is not a legitimate AWS domain. The urgency and specific technical jargon are designed to make the engineer click the link without thinking, which will likely steal AWS console credentials.',
+    points: 20,
+  }
+);
+
+// ============================================
 // INSTAGRAM DM SCENARIOS (25 Total)
 // ============================================
 
@@ -1892,14 +1975,21 @@ export function getRandomScenarios(count: number = 5): Scenario[] {
   return shuffled.slice(0, count);
 }
 
-export function getMixedScenarios(count: number = 5): Scenario[] {
-  // Ensure at least one of each type
-  const email = allScenarios.find(s => s.type === 'email');
-  const whatsapp = allScenarios.find(s => s.type === 'whatsapp');
-  const instagram = allScenarios.find(s => s.type === 'instagram');
+export function getMixedScenarios(count: number = 5, difficulty?: 'Easy' | 'Medium' | 'Enterprise'): Scenario[] {
+  let pool = allScenarios;
+
+  if (difficulty) {
+    const mappedDiff = difficulty === 'Enterprise' ? 'Advanced' : difficulty;
+    pool = pool.filter(s => s.difficulty === mappedDiff);
+  }
+
+  // Ensure at least one of each type if possible
+  const email = pool.find(s => s.type === 'email');
+  const whatsapp = pool.find(s => s.type === 'whatsapp');
+  const instagram = pool.find(s => s.type === 'instagram');
 
   const baseScenarios = [email, whatsapp, instagram].filter(Boolean) as Scenario[];
-  const remaining = allScenarios.filter(s => !baseScenarios.find(b => b.id === s.id));
+  const remaining = pool.filter(s => !baseScenarios.find(b => b.id === s.id));
   const shuffled = [...remaining].sort(() => Math.random() - 0.5);
 
   return [...baseScenarios, ...shuffled].slice(0, count);
